@@ -201,7 +201,7 @@ class AudioProcessor():
         
         # get the audio
         audio_file_path = os.path.join(base_dir,audio_file,)
-        e_audio_file_path = os.path.join(base_dir,'encrypted_audio_file.wav')
+        e_audio_file_path = os.path.join(base_dir,'dencrypted_audio_file.wav')
         with open(audio_file_path, 'rb') as filedata:
             audio_contents = filedata.read()
         print(f" Completed reading {audio_file} ...")
@@ -211,22 +211,43 @@ class AudioProcessor():
         encrypted_audio = encryptor.encrypt(audio_contents)
         print(f" Completed encypting {audio_file} ...")
         
+        
+        # 
+        
+        obj = wave.open(e_audio_file_path, 'wb')
+        obj.setnchannels(self.CHANNELS)
+        obj.setsampwidth(2)
+        obj.setframerate(self.RATE)
+        obj.writeframes(b''.join(encrypted_audio))
+        obj.close()
+        print(" Completed saving encrypted_audio_file.wav ...")
         # save encrypted audio
-        with open(e_audio_file_path, 'wb') as fd:
-            fd.write(encrypted_audio)
-            print(" Completed saving encrypted_audio_file.wav ...")
-            return encrypted_audio
         
-    def decrypt_audio(self,base_dir,aes_key_file,aes_key_vector):
         
-        aes_key = self.read_text_file(base_dir,aes_key_file)
-        aes_v = self.read_text_file(base_dir,aes_key_vector)
+    def audio_decrypt(self,base_dir,aes_key_file,aes_key_vector):
         
+        aes_key = self.read_text_file(base_dir,aes_key_file).decode('ascii')
+
+        aes_v = self.read_text_file(base_dir,aes_key_vector).decode('ascii')
+
+        
+        print(aes_key)
         encrypted_audio = os.path.join(base_dir,'encrypted_audio_file.wav')
-        with open(encrypted_audio, 'rb') as fd:
-            decrypted_contents = fd.read()
+        decrypted_audio_path = os.path.join(base_dir,'decrypted_audio_file.wav')
+        fd=wave.open(encrypted_audio, 'rb')
+        encrypted_contents = fd.readframes(-1)
+            # print(encrypted_contents)
         
         #  decryptor object
         decryptor = AES.new(aes_key.encode("utf-8"), AES.MODE_CFB, aes_v.encode("utf-8"))
-        decrypted_audio = decryptor.decrypt(decrypted_contents)
-        return decrypted_audio
+        decrypted_audio = decryptor.decrypt(encrypted_contents)
+        
+        
+        obj = wave.open(decrypted_audio_path, 'wb')
+        obj.setnchannels(self.CHANNELS)
+        obj.setsampwidth(2)
+        obj.setframerate(self.RATE)
+        obj.writeframes(b''.join(decrypted_audio))
+        obj.close()
+        print(" Completed saving decrypted_audio_file.wav ...")
+        return 

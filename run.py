@@ -21,9 +21,16 @@ def main():
     
     # ap.transcribe_audio(BASE_DIR,recordName)
     # encrypt audio
-    ap.audio_encrypt(BASE_DIR,recordName)
+    # ap.audio_encrypt(BASE_DIR,recordName)
     # ap.play_recorded_audio(BASE_DIR,"encrypted_audio_file.wav") dont play since it is not wav
+    
+    # ap.audio_decrypt(BASE_DIR,"AES_KEY.txt","AES_IV.txt")
     # decrypt audio
+    
+    # ap.audio_encrypt(BASE_DIR,"dencrypted_audio_file.wav")
+    
+    # play decrepted audio
+    ap.play_recorded_audio(BASE_DIR,"decrypted_audio_file.wav")
     return
 
 if __name__=="__main__":
