@@ -115,6 +115,8 @@ class AudioProcessor():
         print("------------------------------------------------------\n")
         print(f" Duration of audio |    {time_d}s    |\n")
         print("-------------------------------------------------------\n")
+        print(f" Frame values      |    {audio_array}|\n")
+        print("-------------------------------------------------------\n")
         
         
         # Plot
