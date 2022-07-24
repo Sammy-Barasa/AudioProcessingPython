@@ -4,7 +4,8 @@ import pyaudio
 import wave
 import matplotlib.pyplot as plt
 import numpy as np
-# import speech_recognition as sr
+import os
+from pathlib import Path
 from cgitb import text
 import speech_recognition as sr
 import os
@@ -20,6 +21,7 @@ class AudioProcessor():
         self.RATE = 44100
         self.seconds = 10
         self.CHUNKS = 1024
+        self.BASE_DIR = Path(__file__).resolve().parent # current folder absolute path
     
     def record_audio(self,file_name_to_wav):
         '''
@@ -58,19 +60,20 @@ class AudioProcessor():
         pa.terminate()
         print('************completed recording************************')
         
-        obj = wave.open(file_name_to_wav, 'wb')
+        obj = wave.open(os.path.join(self.BASE_DIR,file_name_to_wav), 'wb')
         obj.setnchannels(self.CHANNELS)
         obj.setsampwidth(pa.get_sample_size(self.FORMAT))
         obj.setframerate(self.RATE)
         obj.writeframes(b''.join(frames))
         obj.close()
+        print("Recordingwas successfull .....\n")
         return file_name_to_wav
     
     def plot_wav_file(self,file_name_wav,name=None):
         '''
         Plot wav file
         '''
-        f = wave.open(file_name_wav,'rb')
+        f = wave.open(os.path.join(self.BASE_DIR,file_name_wav),'rb')
 
         sample_rate = f.getframerate()
         frames = f.getnframes()
@@ -128,13 +131,13 @@ class AudioProcessor():
         return
     
     
-    def play_recorded_audio(self,base_dir,file_name):
+    def play_recorded_audio(self,file_name):
             '''
             Play recorded audio
             '''
             CHUNK = self.CHUNKS
 
-            file_ = os.path.join(base_dir,file_name)
+            file_ = os.path.join(self.BASE_DIR,file_name)
 
             wf = wave.open(file_, 'rb')
 
@@ -156,8 +159,8 @@ class AudioProcessor():
                 data = wf.readframes(CHUNK)   
             return
         
-    def write_text_file(self,base_dir,output_file_name,info):
-        out_file_path = os.path.join(base_dir,output_file_name)
+    def write_text_file(self,output_file_name,info):
+        out_file_path = os.path.join(self.BASE_DIR,output_file_name)
         f = open(f"{out_file_path}.txt",'w')
         print("Writing text")
         f.write(info)
@@ -165,17 +168,17 @@ class AudioProcessor():
         print('Completed writing text to output file ....')
         return
     
-    def read_text_file(self,base_dir,input_file):
-        file_path = os.path.join(base_dir,input_file)
+    def read_text_file(self,input_file):
+        file_path = os.path.join(self.BASE_DIR,input_file)
         file_data = open(file_path,'rb')
         data_out = file_data.read()
         return data_out
     
-    def transcribe_audio(self,base_dir,audio_path):
+    def transcribe_audio(self,audio_path):
         
         
         r = sr.Recognizer()
-        Audio_File = os.path.join(base_dir,audio_path)
+        Audio_File = os.path.join(self.BASE_DIR,audio_path)
         print(Audio_File)
         
         with sr.AudioFile(Audio_File) as source:
@@ -184,56 +187,57 @@ class AudioProcessor():
             
             print("Text recovered from the audio is:\n")
             print(text)
-            self.write_text_file(base_dir,"Output",text)
+            self.write_text_file("Output",text)
             return
         
         
         
-    def audio_encrypt(self,base_dir,audio_file):
+    def audio_encrypt(self,audio_file):
         # make secret key
         AES_KEY = ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for x in range(32))
 
         AES_IV = ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for x in range(16))
         
         # save key and vector
-        self.write_text_file(base_dir,"AES_KEY",AES_KEY)
-        self.write_text_file(base_dir,"AES_IV",AES_IV)
+        self.write_text_file("AES_KEY",AES_KEY)
+        self.write_text_file("AES_IV",AES_IV)
         
         # get the audio
-        audio_file_path = os.path.join(base_dir,audio_file,)
-        e_audio_file_path = os.path.join(base_dir,'dencrypted_audio_file.wav')
+        audio_file_path = os.path.join(self.BASE_DIR,audio_file,)
+        e_audio_file_path = os.path.join(self.BASE_DIR,'encrypted_audio_file.wav')
         with open(audio_file_path, 'rb') as filedata:
             audio_contents = filedata.read()
         print(f" Completed reading {audio_file} ...")
         
         # encrypt audio
         encryptor = AES.new(AES_KEY.encode("utf-8"), AES.MODE_CFB, AES_IV.encode("utf-8"))
-        encrypted_audio = encryptor.encrypt(audio_contents)
+        encrypted_audio = encryptor.encrypt(audio_contents) # type bytes result
         print(f" Completed encypting {audio_file} ...")
         
-        
-        # 
+        print("encrypted audio is of type: ",type(encrypted_audio))
+        # save encrypted audio
         
         obj = wave.open(e_audio_file_path, 'wb')
         obj.setnchannels(self.CHANNELS)
         obj.setsampwidth(2)
         obj.setframerate(self.RATE)
-        obj.writeframes(b''.join(encrypted_audio))
+        obj.writeframes(''.join(encrypted_audio).encode('utf-8') + '\n') # joining the list of byte string
         obj.close()
         print(" Completed saving encrypted_audio_file.wav ...")
-        # save encrypted audio
+        # completed saving encrypted audio
+        return
         
         
-    def audio_decrypt(self,base_dir,aes_key_file,aes_key_vector):
+    def audio_decrypt(self,aes_key_file,aes_key_vector):
         
-        aes_key = self.read_text_file(base_dir,aes_key_file).decode('ascii')
+        aes_key = self.read_text_file(aes_key_file).decode('ascii')
 
-        aes_v = self.read_text_file(base_dir,aes_key_vector).decode('ascii')
+        aes_v = self.read_text_file(aes_key_vector).decode('ascii')
 
         
         print(aes_key)
-        encrypted_audio = os.path.join(base_dir,'encrypted_audio_file.wav')
-        decrypted_audio_path = os.path.join(base_dir,'decrypted_audio_file.wav')
+        encrypted_audio = os.path.join(self.BASE_DIR,'encrypted_audio_file.wav')
+        decrypted_audio_path = os.path.join(self.BASE_DIR,'decrypted_audio_file.wav')
         fd=wave.open(encrypted_audio, 'rb')
         encrypted_contents = fd.readframes(-1)
             # print(encrypted_contents)
