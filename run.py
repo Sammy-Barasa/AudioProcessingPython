@@ -7,6 +7,8 @@ def main():
     ap = AudioProcessor()
     downloadedWav = "PinkPanther30.wav"
     recorded_fileName = "Recorded_audio.wav" # "Recorded_audio.wav" 
+    exampleFile ="example.wav"
+    hillCypherOutput = "enc_hill.wav.crypt"
     
     
   
@@ -18,15 +20,21 @@ def main():
         print("------------------------------------------------------\n")
         print(f" 2   |   Record an audio                            |\n")
         print("------------------------------------------------------\n")
-        print(f" 3   |   Listen to recorded audio, plot and view properties  |\n")
+        print(f" 3   |   Play recorded audio,plot & view properties |\n")
         print("------------------------------------------------------\n")
-        print(f" 4   |   Transcribe recorded audio                  |\n")
+        print(f" 4   |   Play downloaded audio,plot & view properties |\n")
         print("------------------------------------------------------\n")
-        print(f" 5   |   Encrypt recorded audio                     |\n")
+        print(f" 5   |   Transcribe recorded audio                  |\n")
         print("------------------------------------------------------\n")
-        print(f" 6   |   Decrypt encrypted audio                    |\n")
+        print(f" 6   |   Encrypt recorded audio                     |\n")
+        print("------------------------------------------------------\n")
+        print(f" 7   |   Decrypt encrypted audio                    |\n")
         print("-------------------------------------------------------\n")
-        print(f" 7   |   Exit the application                       |\n")
+        print(f" 8   |   Decrypt encrypted audio with hillCypher    |\n")
+        print("-------------------------------------------------------\n")
+        print(f" 9   |   Decrypt decrypted audio with hillCypher    |\n")
+        print("-------------------------------------------------------\n")
+        print(f" 0   |   Exit the application                       |\n")
         print("-------------------------------------------------------\n")
         opt=int(input("Select your option and press <---]: \n"))
 
@@ -40,17 +48,23 @@ def main():
                 
             case 3:
                 ap.play_recorded_audio(recorded_fileName)
-                
+            
             case 4:
-                ap.transcribe_audio(recorded_fileName)
+                ap.play_recorded_audio(downloadedWav)
                 
             case 5:
-                ap.audio_encrypt(recorded_fileName)
+                ap.transcribe_audio(recorded_fileName)
                 
             case 6:
-                ap.audio_decrypt("AES_KEY.txt","AES_IV.txt")
+                ap.audio_encrypt(recorded_fileName)
                 
             case 7:
+                ap.audio_decrypt("AES_KEY.txt","AES_IV.txt")
+            case 8:
+                ap.encrypt_hillCypher(exampleFile)
+            case 9:
+                ap.decrypt_hillCypher(hillCypherOutput)
+            case 0:
                 print("Exiting ...")
                 break 
            

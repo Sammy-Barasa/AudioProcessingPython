@@ -12,6 +12,8 @@ import os
 import string
 import random
 from Crypto.Cipher import AES
+from sympy.crypto.crypto import encipher_hill, decipher_hill
+from sympy import Matrix
 
 class AudioProcessor():
     def __init__(self):
@@ -22,6 +24,7 @@ class AudioProcessor():
         self.seconds = 10
         self.CHUNKS = 1024
         self.BASE_DIR = Path(__file__).resolve().parent # current folder absolute path
+        self.key = Matrix([[1,]]) # hillcypher encrption key
     
     def record_audio(self,file_name_to_wav):
         '''
@@ -258,3 +261,46 @@ class AudioProcessor():
         obj.close()
         print(" Completed saving decrypted_audio_file.wav ...")
         return 
+    
+    def encrypt_hillCypher(self,file_wav):
+        
+        with open(os.path.join(self.BASE_DIR,file_wav), "rb") as f:
+            x = f.read().hex()
+
+        key=self.key
+
+        # Encryption
+        print("Encrypting .... ")
+        ciphertext = ""
+        for i in x:
+            if i.isalpha():
+                ciphertext+=encipher_hill(i,key)
+            else:
+                ciphertext+=i
+                
+        print("Completed Encrypting ..... ")
+        print(type(ciphertext))
+        print(len(ciphertext))
+        with open(os.path.join(self.BASE_DIR,"enc_hill.wav.crypt"), "w") as f:
+            f.write(ciphertext)
+
+        print("Encrypted File Completed")
+    
+    def decrypt_hillCypher(self,encrypted_file):
+        print("Starting Decryption .... ")
+        # Decryption
+        with open(os.path.join(self.BASE_DIR,"enc_hill.wav.crypt"), "r") as f:
+            ciphertext=f.read()
+        
+        print(len(ciphertext))
+        pt = ""
+        for i in ciphertext:
+            if i.isalpha():
+                pt+=decipher_hill(i,self.key)
+            else:
+                pt+=i
+
+        with open(os.path.join(self.BASE_DIR,"dec_hill.wav"), "wb") as f:
+            f.write(bytes().fromhex(pt))
+        print("Completed Decryption")
+        print("--------------------------------------------")

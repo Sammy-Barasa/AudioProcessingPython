@@ -1,3 +1,5 @@
 SpeechRecognition
 matplotlib
 pycryptodome
+secretpy
+sympy
