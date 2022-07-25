@@ -168,7 +168,7 @@ class AudioProcessor():
         
     def write_text_file(self,output_file_name,info):
         out_file_path = os.path.join(self.BASE_DIR,output_file_name)
-        f = open(f"{out_file_path}.txt",'w')
+        f = open(f"{out_file_path}",'w')
         print("Writing text")
         f.write(info)
         f.close()
@@ -193,7 +193,7 @@ class AudioProcessor():
             text = r.recognize_google(audio)
             
             print("Text recovered from the audio is:\n")
-            print(text)
+            print(f"\033[1;36m {text}")
             self.write_text_file(out_put_text_file,text)
             return        
         
