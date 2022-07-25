@@ -13,6 +13,7 @@ import string
 import random
 from Crypto.Cipher import AES
 from sympy.crypto.crypto import encipher_hill, decipher_hill
+from cryptography.fernet import Fernet
 from sympy import Matrix
 
 class AudioProcessor():
@@ -20,7 +21,7 @@ class AudioProcessor():
         self.FRAMES_PER_BUFFER = 3200
         self.FORMAT = pyaudio.paInt16
         self.CHANNELS = 2
-        self.RATE = 44100
+        self.RATE = 16000
         self.seconds = 10
         self.CHUNKS = 1024
         self.BASE_DIR = Path(__file__).resolve().parent # current folder absolute path
@@ -52,7 +53,7 @@ class AudioProcessor():
             data = stream.read(self.FRAMES_PER_BUFFER)
             frames.append(data)
             time_tracking += 1
-            if time_tracking == self.RATE/self.FRAMES_PER_BUFFER:
+            if time_tracking == (self.RATE)/(self.FRAMES_PER_BUFFER):
                 second_count += 1
                 time_tracking = 0
                 print(f'Time Left: {seconds - second_count} seconds')
@@ -180,7 +181,7 @@ class AudioProcessor():
         data_out = file_data.read()
         return data_out
     
-    def transcribe_audio(self,audio_path):
+    def transcribe_audio(self,audio_path,out_put_text_file):
         
         
         r = sr.Recognizer()
@@ -193,11 +194,96 @@ class AudioProcessor():
             
             print("Text recovered from the audio is:\n")
             print(text)
-            self.write_text_file("Output",text)
-            return
+            self.write_text_file(out_put_text_file,text)
+            return        
         
+    def file_encrypt(self,transcribed_file,encrypted_text_file):
+
+        # generate encryption key
+        key = Fernet.generate_key()
+        # write the encryption key to a file called fileKey.key
+        file_key = open(os.path.join(self.BASE_DIR,'Key_file.key'),'wb')
+        file_key.write(key)
         
+        file_key = open(os.path.join(self.BASE_DIR,'Key_file.key'),'rb')
+        key = file_key.read()
+
+        # use generated key
+        fernet = Fernet(key)
         
+        #open original text file for encryption.
+        file = open(os.path.join(self.BASE_DIR,transcribed_file))
+        original = file.read()
+
+        # covert text file to bytes for encryption
+        original_bytes = original.encode()
+
+        #encrypt the file
+        encrypt_file = fernet.encrypt(original_bytes)
+
+        # write encrypted data to a text file.
+        encrypted_text = open(os.path.join(self.BASE_DIR,encrypted_text_file),'wb')
+        encrypted_text.write(encrypt_file)
+        
+
+    
+    def file_decrypt(self,encrypted_text_file,decrypted_txt_file):
+         #decrypt file and store in a different text file
+        enc_file = open(os.path.join(self.BASE_DIR,encrypted_text_file),'rb')
+        encrypted_data = enc_file.read()
+        file_key = open(os.path.join(self.BASE_DIR,'Key_file.key'),'rb')
+        key = file_key.read()
+        fernet = Fernet(key)
+
+        decrypted_data = fernet.decrypt(encrypted_data)
+        with open(os.path.join(self.BASE_DIR,decrypted_txt_file),'wb') as dec_text:
+            # decrypt_message = decrypted_data.decode()
+            dec_text.write(decrypted_data)
+            
+    
+    def encrypt_hillCypher(self,file_wav):
+        
+        with open(os.path.join(self.BASE_DIR,file_wav), "rb") as f:
+            x = f.read().hex()
+
+        key=self.key
+
+        # Encryption
+        print("Encrypting .... ")
+        ciphertext = ""
+        for i in x:
+            if i.isalpha():
+                ciphertext+=encipher_hill(i,key)
+            else:
+                ciphertext+=i
+                
+        print("Completed Encrypting ..... ")
+        print(type(ciphertext))
+        print(len(ciphertext))
+        with open(os.path.join(self.BASE_DIR,"enc_hill.wav.crypt"), "w") as f:
+            f.write(ciphertext)
+
+        print("Encrypted File Completed")
+    
+    def decrypt_hillCypher(self,encrypted_file):
+        print("Starting Decryption .... ")
+        # Decryption
+        with open(os.path.join(self.BASE_DIR,"enc_hill.wav.crypt"), "r") as f:
+            ciphertext=f.read()
+        
+        print(len(ciphertext))
+        pt = ""
+        for i in ciphertext:
+            if i.isalpha():
+                pt+=decipher_hill(i,self.key)
+            else:
+                pt+=i
+
+        with open(os.path.join(self.BASE_DIR,"dec_hill.wav"), "wb") as f:
+            f.write(bytes().fromhex(pt))
+        print("Completed Decryption")
+        print("--------------------------------------------")
+
     def audio_encrypt(self,audio_file):
         # make secret key
         AES_KEY = ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for x in range(32))
@@ -261,46 +347,3 @@ class AudioProcessor():
         obj.close()
         print(" Completed saving decrypted_audio_file.wav ...")
         return 
-    
-    def encrypt_hillCypher(self,file_wav):
-        
-        with open(os.path.join(self.BASE_DIR,file_wav), "rb") as f:
-            x = f.read().hex()
-
-        key=self.key
-
-        # Encryption
-        print("Encrypting .... ")
-        ciphertext = ""
-        for i in x:
-            if i.isalpha():
-                ciphertext+=encipher_hill(i,key)
-            else:
-                ciphertext+=i
-                
-        print("Completed Encrypting ..... ")
-        print(type(ciphertext))
-        print(len(ciphertext))
-        with open(os.path.join(self.BASE_DIR,"enc_hill.wav.crypt"), "w") as f:
-            f.write(ciphertext)
-
-        print("Encrypted File Completed")
-    
-    def decrypt_hillCypher(self,encrypted_file):
-        print("Starting Decryption .... ")
-        # Decryption
-        with open(os.path.join(self.BASE_DIR,"enc_hill.wav.crypt"), "r") as f:
-            ciphertext=f.read()
-        
-        print(len(ciphertext))
-        pt = ""
-        for i in ciphertext:
-            if i.isalpha():
-                pt+=decipher_hill(i,self.key)
-            else:
-                pt+=i
-
-        with open(os.path.join(self.BASE_DIR,"dec_hill.wav"), "wb") as f:
-            f.write(bytes().fromhex(pt))
-        print("Completed Decryption")
-        print("--------------------------------------------")
